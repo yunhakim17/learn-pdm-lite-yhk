@@ -4,3 +4,5 @@ Thumbs.db
 __pycache__/
 *.pyc
 *.zip
+node_modules/
+package-lock.json

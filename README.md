@@ -3,6 +3,8 @@
 설비 센서 50건에서 평균 ± 2표준편차로 이상 후보를 찾고, 한 번의 튐(노이즈)과 꾸준한 상승(추세)을 구분해 정비 신호를 읽는 10분 실습이다. 수업은 Claude Code 스킬 `/learn-pdm-lite-yhk`가 진행한다 (Skills as Curriculum). 이 강의는 yhk(yunhakim17)가 course-forge로 직접 만들었다.
 
 - **결과 대시보드**: https://yunhakim17.github.io/learn-pdm-lite-yhk/
+- **커리큘럼 한 장**: https://yunhakim17.github.io/learn-pdm-lite-yhk/docs/
+- **따라 하기 매뉴얼**: [PPT](docs/Learn_Pdm_Lite_Yhk_Lab_Manual.pptx) · [PDF](docs/Learn_Pdm_Lite_Yhk_Lab_Manual.pdf)
 - 처음이면 [GUIDE.md](GUIDE.md)부터. 기본 환경은 Claude 데스크톱 앱(Code 탭). VS Code는 GUIDE 부록 B
 
 ![결과 대시보드](.claude/skills/learn-pdm-lite-yhk/assets/answers/preview.png)
@@ -45,6 +47,7 @@ npx skills add yunhakim17/learn-pdm-lite-yhk --agent claude-code --global --yes 
 | 날짜 | 바뀐 점 |
 |---|---|
 | 2026-10-31 | 첫 판 (블록 3개 · 10분) |
+| 2026-10-31 | 커리큘럼 한 장 페이지(docs/)와 따라 하기 매뉴얼(PPT·PDF 27장) 추가 |
 
 ## 만든 방법
 

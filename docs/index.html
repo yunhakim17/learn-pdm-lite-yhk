@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>노이즈 vs 추세 커리큘럼</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<style>
+/* 레이아웃: 설비 점검표처럼 — 왼쪽 정렬 단일 칼럼, 블록은 시간 비율 띠로 이어진다 */
+:root{
+  --bg:#f6f7f8; --surface:#ffffff; --fg:#1d232b; --muted:#5d6672; --line:#d9dde2;
+  --steel:#6f7c8c; --signal:#c8323f; --signal-soft:#f8e3e5; --ok:#2f7a55; --band:#e9ecef;
+  --display:"IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --body:"IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#14181d; --surface:#1b2027; --fg:#e6e9ed; --muted:#9aa4b1; --line:#2c333c;
+  --steel:#93a1b3; --signal:#ff6470; --signal-soft:#3a2026; --ok:#5fc08e; --band:#232931; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#14181d; --surface:#1b2027; --fg:#e6e9ed; --muted:#9aa4b1; --line:#2c333c;
+  --steel:#93a1b3; --signal:#ff6470; --signal-soft:#3a2026; --ok:#5fc08e; --band:#232931; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.65;margin:0}
+.wrap{max-width:860px;margin:0 auto;padding-block:40px 64px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:grid;gap:48px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.3}
+h1{font-size:clamp(1.8rem,4.5vw,2.6rem);font-weight:700;letter-spacing:-0.01em}
+h2{font-size:1.35rem;font-weight:700}
+h3{font-size:1.05rem;font-weight:600}
+p{margin:0;max-width:65ch}
+.label{font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+section{display:grid;gap:16px}
+a{color:inherit;text-decoration-color:var(--signal);text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+
+/* 머리 */
+header{display:grid;gap:14px}
+.lede{font-size:1.1rem;color:var(--muted)}
+.lede b{color:var(--fg)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-top:8px}
+.facts div{background:var(--surface);padding:12px 14px;display:grid;gap:2px;min-width:0}
+.facts strong{font-size:1rem}
+
+/* 메시지 */
+.msgs{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.msgs li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline}
+.msgs .mono{color:var(--muted);font-size:.85rem}
+.msgs li.core{background:var(--signal-soft);padding:10px 12px;margin-inline:-12px}
+.msgs li.core .mono{color:var(--signal)}
+
+/* 시간 띠 */
+.timeline{display:grid;grid-template-columns:2fr 6fr 2fr;border:1px solid var(--line);background:var(--surface)}
+.timeline div{padding:10px 12px;border-right:1px solid var(--line);min-width:0}
+.timeline div:last-child{border-right:0}
+.timeline div.main{background:var(--band)}
+.timeline .mono{font-size:.8rem;color:var(--muted)}
+.timeline strong{display:block;font-size:.95rem;line-height:1.35}
+
+/* 블록 */
+.block{background:var(--surface);border:1px solid var(--line);padding:20px;display:grid;gap:14px}
+.block-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.block-head .mono{font-size:.85rem;color:var(--muted)}
+.chip{font-family:var(--mono);font-size:.72rem;padding:2px 8px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.quiz{border-color:var(--signal);color:var(--signal)}
+dl.rows{display:grid;grid-template-columns:7.5em 1fr;gap:8px 16px;margin:0}
+dl.rows dt{color:var(--muted);font-size:.9rem}
+dl.rows dd{margin:0;min-width:0}
+.check{border-top:1px dashed var(--line);padding-top:12px;display:grid;gap:6px}
+.check ul{margin:0;padding-left:1.1em}
+
+/* 퀴즈 */
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+figure{margin:0;background:var(--surface);border:1px solid var(--line);padding:12px 14px;display:grid;gap:6px}
+figcaption{font-size:.9rem}
+figure svg{width:100%;height:auto;display:block}
+.ax{stroke:var(--line);stroke-width:1}
+.lim{stroke:var(--muted);stroke-dasharray:4 3;stroke-width:1}
+.tk{fill:var(--muted);font-family:var(--mono);font-size:10px}
+.lnA{stroke:var(--steel);stroke-width:2.2;fill:none}
+.lnB{stroke:var(--signal);stroke-width:2.2;fill:none}
+.ptA{fill:var(--steel)} .ptB{fill:var(--signal)}
+.opts{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.opts button{width:100%;text-align:left;font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);padding:10px 14px;cursor:pointer;display:grid;gap:2px}
+.opts button:hover{border-color:var(--steel)}
+.opts button small{color:var(--muted);font-size:.85rem}
+.opts button[data-state="right"]{border-color:var(--ok);box-shadow:inset 4px 0 0 var(--ok)}
+.opts button[data-state="wrong"]{border-color:var(--signal);box-shadow:inset 4px 0 0 var(--signal)}
+.answer{background:var(--surface);border:1px solid var(--line);padding:16px;display:grid;gap:8px}
+
+/* 표 */
+.tbl{overflow-x:auto;border:1px solid var(--line);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.92rem;min-width:520px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.82rem}
+tr:last-child td{border-bottom:0}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag-noise{color:var(--steel);font-weight:600}
+.tag-trend{color:var(--signal);font-weight:600}
+
+/* 설치 */
+.cmd{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}
+.cmd code{flex:1 1 300px;min-width:0;font-family:var(--mono);font-size:.85rem;background:var(--surface);border:1px solid var(--line);padding:10px 12px;overflow-x:auto;white-space:nowrap}
+.cmd button{font:inherit;font-size:.9rem;background:var(--fg);color:var(--bg);border:0;padding:8px 16px;cursor:pointer}
+.links{display:flex;flex-wrap:wrap;gap:8px 20px}
+ul.plain{margin:0;padding-left:1.1em;display:grid;gap:4px}
+footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padding-top:16px;display:grid;gap:4px}
+@media (max-width:520px){
+  .timeline{grid-template-columns:1fr}
+  .timeline div{border-right:0;border-bottom:1px solid var(--line)}
+  .timeline div:last-child{border-bottom:0}
+  dl.rows{grid-template-columns:1fr;gap:2px}
+  dl.rows dd{margin-bottom:8px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="label">learn-pdm-lite-yhk · Day5 예지보전 · 10분 실습</span>
+  <h1>노이즈인가, 추세인가</h1>
+  <p class="lede">설비 2대의 센서 50건에서 이상 후보를 찾고, <b>한 번의 튐</b>과 <b>임계선을 향한 꾸준한 상승</b>을 구분해 어느 설비를 먼저 계획 정비할지 판단한다. 결과는 진동 그래프 한 장으로 공개한다.</p>
+  <div class="facts">
+    <div><span class="label">대상</span><strong>자동차 산업 재직자</strong></div>
+    <div><span class="label">시간</span><strong class="mono">10분 · 블록 3개</strong></div>
+    <div><span class="label">퀴즈</span><strong>1문항 (Block 1)</strong></div>
+    <div><span class="label">결과물</span><strong>GitHub Pages 그래프</strong></div>
+  </div>
+</header>
+
+<section aria-labelledby="h-goal">
+  <h2 id="h-goal">원본 강의의 메시지</h2>
+  <p>원본 Day5 강의는 세 가지 메시지를 던진다. 이 10분 실습은 세 번째 메시지 하나를 손으로 확인한다.</p>
+  <ol class="msgs">
+    <li><span class="mono">1</span><span>제조 현장에서 "고장을 미리 아는 것"은 비용이 아니라 생존이다.</span></li>
+    <li><span class="mono">2</span><span>유지보수는 사후 → 예방 → 예측 → 처방으로 진화한다.</span></li>
+    <li class="core"><span class="mono">3</span><span><b>한 번의 튐(노이즈)이 아니라 추세적 상승이 진짜 신호다.</b> 이 실습의 중심.</span></li>
+  </ol>
+</section>
+
+<section aria-labelledby="h-flow">
+  <h2 id="h-flow">흐름</h2>
+  <p>띠의 폭은 블록에 쓰는 시간에 비례한다.</p>
+  <div class="timeline" role="list">
+    <div role="listitem"><span class="mono">B0 · 2분</span><strong>준비</strong></div>
+    <div role="listitem" class="main"><span class="mono">B1 · 6분 · 퀴즈</span><strong>노이즈 vs 추세</strong></div>
+    <div role="listitem"><span class="mono">B2 · 2분</span><strong>공개</strong></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-blocks">
+  <h2 id="h-blocks">블록</h2>
+
+  <article class="block">
+    <div class="block-head"><h3>Block 0 · 준비</h3><span class="mono">2분</span><span class="chip">원본 ① 환경 · ② 데이터</span></div>
+    <dl class="rows">
+      <dt>개념</dt><dd>다변수 센서 데이터(진동 mm/s · 온도 ℃ · 압력 bar). 단위와 측정 주기부터 확인한다. 단위가 섞이면 이상 판단이 흔들린다.</dd>
+      <dt>실습</dt><dd>홈 폴더에 <span class="mono">pdm-lite-lab</span>을 만들고 센서 CSV를 복사한 뒤, 행 수·설비·단위·git·python을 점검한다.</dd>
+      <dt>산출물</dt><dd class="mono">env_check.txt</dd>
+    </dl>
+    <div class="check"><span class="label">확인할 것</span><ul><li>데이터 행 <span class="mono">50</span>개, 설비 2대 (A 프레스 메인모터 · B 차체 용접로봇 감속기)</li><li>끝나면 <span class="mono">pdm-lite-lab</span> 폴더로 새 세션을 연다</li></ul></div>
+  </article>
+
+  <article class="block">
+    <div class="block-head"><h3>Block 1 · 노이즈 vs 추세</h3><span class="mono">6분</span><span class="chip">원본 ③ 전처리 · ④ 분석1</span><span class="chip quiz">퀴즈 1</span></div>
+    <dl class="rows">
+      <dt>개념</dt><dd>평상 범위 = 평균 ± 2표준편차(설비별로 따로). 범위를 벗어나면 이상 후보. 한 번 튀고 돌아오면 노이즈, 임계선을 향해 꾸준히 오르면 추세이고 그 시작점이 정비 신호다.</dd>
+      <dt>실습</dt><dd>설비별 평상 범위 계산 → 이상 후보 표시 → 노이즈/추세 판정 → 진동 선 차트(상한선 포함) 한 장.</dd>
+      <dt>산출물</dt><dd class="mono">anomalies.csv · index.html</dd>
+    </dl>
+    <div class="check"><span class="label">확인할 것</span><ul>
+      <li>설비A 진동 <span class="mono">12:40 3.5</span> → 노이즈 · 상한 <span class="mono">2.10</span></li>
+      <li>설비B 진동 <span class="mono">15:40 2.2 · 16:00 2.9</span> → 추세 · 상한 <span class="mono">2.08</span> · 시작 <span class="mono">15:00</span></li>
+      <li>설비B 온도 <span class="mono">16:00 65.1</span> · 그 밖의 변수는 이상 후보 없음</li>
+    </ul></div>
+  </article>
+
+  <article class="block">
+    <div class="block-head"><h3>Block 2 · 공개</h3><span class="mono">2분</span><span class="chip">원본 밖 · 배포와 공유</span></div>
+    <dl class="rows">
+      <dt>개념</dt><dd>GitHub Pages는 저장소의 index.html을 웹 주소로 보여 준다. 공개 전에 올라갈 파일을 보고, 일회용 코드는 브라우저에만 넣는다.</dd>
+      <dt>실습</dt><dd>public 저장소 <span class="mono">pdm-lite-lab</span> 생성 → Pages 켜기 → 주소 확인 → 공유 메시지 세 줄.</dd>
+      <dt>산출물</dt><dd>Pages 주소 · 공유 메시지</dd>
+    </dl>
+    <div class="check"><span class="label">확인할 것</span><ul><li><span class="mono">https://내아이디.github.io/pdm-lite-lab/</span>이 휴대폰에서 열리고 "실습용 가상 데이터" 문구가 보인다</li></ul></div>
+  </article>
+</section>
+
+<section aria-labelledby="h-quiz">
+  <h2 id="h-quiz">퀴즈 · Block 1</h2>
+  <p>같은 날 두 설비의 진동(mm/s)이 이렇게 기록됐다. 정비팀은 한 팀뿐이다. 먼저 계획 정비를 잡을 설비와 이유로 가장 적절한 것은?</p>
+  <div class="charts">
+    <figure>
+      <svg viewBox="0 0 240 120" role="img" aria-label="설비A 진동 1.0, 1.1, 0.9, 3.5, 1.0">
+        <line class="ax" x1="28" x2="232" y1="104" y2="104"/>
+        <line class="lim" x1="28" x2="232" y1="49.4" y2="49.4"/><text class="tk" x="232" y="45" text-anchor="end">상한 ≈2.1</text>
+        <text class="tk" x="22" y="107" text-anchor="end">0</text><text class="tk" x="22" y="30" text-anchor="end">3.5</text>
+        <polyline class="lnA" points="40,78 88,75.4 136,80.6 184,13 228,78"/>
+        <circle class="ptA" cx="184" cy="13" r="4.5"/>
+      </svg>
+      <figcaption><b>설비A</b> <span class="mono">1.0 → 1.1 → 0.9 → 3.5 → 1.0</span></figcaption>
+    </figure>
+    <figure>
+      <svg viewBox="0 0 240 120" role="img" aria-label="설비B 진동 1.0, 1.3, 1.7, 2.2, 2.9">
+        <line class="ax" x1="28" x2="232" y1="104" y2="104"/>
+        <line class="lim" x1="28" x2="232" y1="49.4" y2="49.4"/><text class="tk" x="232" y="45" text-anchor="end">상한 ≈2.1</text>
+        <text class="tk" x="22" y="107" text-anchor="end">0</text><text class="tk" x="22" y="30" text-anchor="end">3.5</text>
+        <polyline class="lnB" points="40,78 88,70.2 136,59.8 184,46.8 228,28.6"/>
+        <circle class="ptB" cx="184" cy="46.8" r="4.5"/><circle class="ptB" cx="228" cy="28.6" r="4.5"/>
+      </svg>
+      <figcaption><b>설비B</b> <span class="mono">1.0 → 1.3 → 1.7 → 2.2 → 2.9</span></figcaption>
+    </figure>
+  </div>
+  <ul class="opts" id="opts">
+    <li><button type="button" id="opt1" data-correct="0">설비A<small>3.5가 오늘 가장 높은 값이므로 가장 위험하다</small></button></li>
+    <li><button type="button" id="opt2" data-correct="1">설비B<small>임계선을 향해 꾸준히 오르는 추세 — 상승이 시작된 시점을 기준으로 계획 정비</small></button></li>
+    <li><button type="button" id="opt3" data-correct="0">둘 다 바로 교체<small>둘 다 평상 범위를 벗어난 값이 있으니 함께 교체한다</small></button></li>
+    <li><button type="button" id="opt4" data-correct="0">고장 알람까지 대기<small>아직 멈추지 않았으니 알람이 울리면 출동한다</small></button></li>
+  </ul>
+  <div class="answer" id="answer" hidden>
+    <span class="label">정답 2번 · 설비B</span>
+    <p>설비B는 임계선을 향해 꾸준히 오르는 추세적 상승이다. 이 상승의 시작점이 진짜 정비 신호이고, 고장 전 계획 정비의 기준점이 된다.</p>
+    <p>설비A를 고르면 노이즈와 추세를 혼동한 것이다(원본 모범답안의 감점 포인트 "한 번 높았으니 위험"). 둘 다 교체는 상태와 무관한 예방 정비식 판단이라 멀쩡한 부품을 버린다. 알람까지 대기는 사후 정비로, 라인 정지 손실이 가장 크다.</p>
+  </div>
+</section>
+
+<section aria-labelledby="h-verify">
+  <h2 id="h-verify">정답 수치 검증</h2>
+  <p>정답 스크립트를 실제로 실행한 값과 원본 강사용 정답 메모를 대조했다. 7개 값 모두 일치하고, 7개 모두 블록 본문에 들어 있다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>설비</th><th>변수</th><th>이상 후보</th><th>상한</th><th>판정</th><th>정답 메모</th></tr></thead>
+    <tbody>
+      <tr><td>A 프레스 메인모터</td><td>진동 mm/s</td><td class="num">12:40 3.5</td><td class="num">2.10</td><td class="tag-noise">노이즈</td><td>일치</td></tr>
+      <tr><td>B 차체 용접로봇 감속기</td><td>진동 mm/s</td><td class="num">15:40 2.2 · 16:00 2.9</td><td class="num">2.08</td><td class="tag-trend">추세 · 15:00 시작</td><td>일치</td></tr>
+      <tr><td>B 차체 용접로봇 감속기</td><td>온도 ℃</td><td class="num">16:00 65.1</td><td class="num">64.62</td><td class="tag-trend">추세</td><td>일치</td></tr>
+      <tr><td>A 온도·압력, B 압력</td><td>—</td><td class="num">없음</td><td class="num">—</td><td>정상</td><td>일치</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-diff">
+  <h2 id="h-diff">원본과 다르게 정한 곳</h2>
+  <ul class="plain">
+    <li>원본 6단계 중 ⑤ 보고서와 ⑥ 평가를 뺐다. 10분 · 블록 3개로 만들기 위해서다.</li>
+    <li>Google Sheets 차트 대신 HTML 그래프 한 장을 만든다. 공개(B2)할 결과물이 필요해서다.</li>
+    <li>퀴즈는 Block 1의 1문항만 둔다.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="h-install">
+  <h2 id="h-install">수강하기</h2>
+  <p>Claude 데스크톱 앱 Code 탭 입력칸에 붙여 넣고, 새 세션에서 <span class="mono">/learn-pdm-lite-yhk</span>를 입력한다.</p>
+  <div class="cmd"><code id="cmd">npx skills add yunhakim17/learn-pdm-lite-yhk --agent claude-code --global --yes 를 실행해 줘</code><button type="button" id="copy">복사</button></div>
+  <div class="links">
+    <a href="https://github.com/yunhakim17/learn-pdm-lite-yhk">강의 저장소</a>
+    <a href="https://yunhakim17.github.io/learn-pdm-lite-yhk/">결과 대시보드</a>
+    <a href="https://github.com/yunhakim17/learn-pdm-lite-yhk/blob/main/GUIDE.md">실습 가이드</a>
+  </div>
+</section>
+
+<footer>
+  <span>원본 강의: keerhee/kma-auto-genai-3-1 · Day5_예지보전 · 데이터: data/Day5/Day5_설비센서_50건_가상.csv (실습용 가상 데이터)</span>
+  <span>course-forge로 만든 강의 · 만든 사람 yhk</span>
+</footer>
+
+</div>
+
+<script>
+document.querySelectorAll('#opts button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.querySelectorAll('#opts button').forEach(function (x) { x.removeAttribute('data-state'); });
+    b.setAttribute('data-state', b.dataset.correct === '1' ? 'right' : 'wrong');
+    if (b.dataset.correct !== '1') document.getElementById('opt2').setAttribute('data-state', 'right');
+    document.getElementById('answer').hidden = false;
+  });
+});
+document.getElementById('copy').addEventListener('click', function () {
+  var btn = this, text = document.getElementById('cmd').textContent;
+  var done = function () { btn.textContent = '복사됨'; setTimeout(function () { btn.textContent = '복사'; }, 1500); };
+  var fallback = function () { var r = document.createRange(); r.selectNodeContents(document.getElementById('cmd')); var s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+});
+</script>
+
+</html>
