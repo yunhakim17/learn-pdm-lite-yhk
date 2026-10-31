@@ -105,7 +105,51 @@ if start:
     sx = x(times.index(start))
     svg.append(f'<line x1="{sx:.1f}" x2="{sx:.1f}" y1="{PT}" y2="{H-PB}" class="start"/>'
                f'<text x="{sx-6:.1f}" y="{PT+14}" class="tick" text-anchor="end">설비B 추세 시작 {start}</text>')
+# 마우스를 올리면 그 시각의 값을 보여 줄 안내선·점 (평소에는 숨김)
+svg.append(f'<g id="hover" visibility="hidden"><line id="hv-line" y1="{PT}" y2="{H-PB}" class="hv"/>'
+           f'<circle id="hv-a" r="5" fill="var(--a)" class="hv-dot"/><circle id="hv-b" r="5" fill="var(--b)" class="hv-dot"/></g>')
+svg.append(f'<rect id="hit" x="{PL}" y="{PT}" width="{W-PL-PR}" height="{H-PT-PB}" fill="transparent"/>')
 svg.append("</svg>")
+
+# 호버에 쓸 데이터 — 시각별 진동 값, 상한, 이상 후보 여부
+sA, sB = stats[(eqA, "진동")], stats[(eqB, "진동")]
+hover_data = {
+    "x": [round(x(i), 1) for i in range(len(times))],
+    "t": times,
+    "a": sA["values"], "b": sB["values"],
+    "ya": [round(y(v), 1) for v in sA["values"]], "yb": [round(y(v), 1) for v in sB["values"]],
+    "hiA": round(sA["hi"], 2), "hiB": round(sB["hi"], 2),
+    "W": W, "start": start,
+}
+hover_js = """
+<script>
+(function () {
+  var D = __DATA__;
+  var svg = document.querySelector('.chart svg'), g = document.getElementById('hover'),
+      tip = document.getElementById('tip'), box = document.querySelector('.chart');
+  function show(evt) {
+    var r = svg.getBoundingClientRect(), sx = (evt.clientX - r.left) * D.W / r.width, i = 0;
+    for (var k = 1; k < D.x.length; k++) if (Math.abs(D.x[k] - sx) < Math.abs(D.x[i] - sx)) i = k;
+    document.getElementById('hv-line').setAttribute('x1', D.x[i]);
+    document.getElementById('hv-line').setAttribute('x2', D.x[i]);
+    document.getElementById('hv-a').setAttribute('cx', D.x[i]); document.getElementById('hv-a').setAttribute('cy', D.ya[i]);
+    document.getElementById('hv-b').setAttribute('cx', D.x[i]); document.getElementById('hv-b').setAttribute('cy', D.yb[i]);
+    g.setAttribute('visibility', 'visible');
+    var flag = function (v, hi) { return v > hi ? ' <em>이상 후보</em>' : ''; };
+    tip.innerHTML = '<b>' + D.t[i] + '</b>' + (D.t[i] === D.start ? ' · 설비B 추세 시작' : '') +
+      '<br><i class="ka"></i>설비A ' + D.a[i] + ' mm/s' + flag(D.a[i], D.hiA) +
+      '<br><i class="kb"></i>설비B ' + D.b[i] + ' mm/s' + flag(D.b[i], D.hiB);
+    tip.hidden = false;
+    var px = D.x[i] * r.width / D.W, bw = box.clientWidth, tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(bw - tw, px + 12 > bw - tw ? px - tw - 12 : px + 12)) + 'px';
+  }
+  function hide() { g.setAttribute('visibility', 'hidden'); tip.hidden = true; }
+  var hit = document.getElementById('hit');
+  hit.addEventListener('pointermove', show);
+  hit.addEventListener('pointerdown', show);
+  hit.addEventListener('pointerleave', hide);
+})();
+</script>""".replace("__DATA__", json.dumps(hover_data, ensure_ascii=False))
 
 rows_html = "".join(
     f"<tr><td>{escape(eq)}</td><td>{cand_text(eq, '진동')}</td><td>{stats[(eq, '진동')]['hi']:.2f}</td>"
@@ -124,14 +168,17 @@ svg{{width:100%;height:auto;display:block}}.grid{{stroke:var(--line)}}.tick{{fil
 .limit{{stroke-dasharray:6 4;stroke-width:1.5}}.start{{stroke:var(--b);stroke-dasharray:2 3}}
 .lg span{{display:inline-block;margin-right:14px;font-size:.9rem}}.lg i{{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:6px}}
 table{{width:100%;border-collapse:collapse;margin-top:16px;font-size:.9rem}}td,th{{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left}}
+.chart{{position:relative}}#hit{{cursor:crosshair;touch-action:pan-y}}.hv{{stroke:var(--mut);stroke-width:1}}.hv-dot{{stroke:var(--bg);stroke-width:2}}
+.tip{{position:absolute;top:8px;background:var(--bg);border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.12);padding:6px 10px;font-size:.85rem;line-height:1.5;pointer-events:none;white-space:nowrap;font-variant-numeric:tabular-nums}}
+.tip em{{color:var(--b);font-style:normal;font-weight:600}}.tip i{{display:inline-block;width:10px;height:3px;vertical-align:middle;margin-right:6px}}.tip .ka{{background:var(--a)}}.tip .kb{{background:var(--b)}}
 </style></head><body><main>
 <h1>노이즈인가, 추세인가 — 설비 진동</h1>
 <p class="mut">실습용 가상 데이터 · 2026-09-15 08:00~16:00 · 20분 간격</p>
 <p class="sum">설비A의 3.5는 한 번 튀고 돌아온 <b>노이즈</b>, 설비B는 {start}부터 꾸준히 오르는 <b>추세</b> — 설비B를 먼저 계획 정비한다.</p>
-<div class="lg"><span><i style="background:var(--a)"></i>설비A 프레스 메인모터</span><span><i style="background:var(--b)"></i>설비B 차체 용접로봇 감속기</span><span class="mut">점선 = 설비별 상한(평균 + 2표준편차) · 점 = 이상 후보</span></div>
-{''.join(svg)}
+<div class="lg"><span><i style="background:var(--a)"></i>설비A 프레스 메인모터</span><span><i style="background:var(--b)"></i>설비B 차체 용접로봇 감속기</span><span class="mut">점선 = 설비별 상한(평균 + 2표준편차) · 점 = 이상 후보 · 그래프에 마우스를 올리면 시각별 값이 보인다</span></div>
+<div class="chart">{''.join(svg)}<div class="tip" id="tip" hidden></div></div>
 <table><tr><th>설비</th><th>진동 이상 후보</th><th>상한(mm/s)</th><th>판정</th></tr>{rows_html}</table>
 <p class="mut">출처: keerhee/kma-auto-genai-3-1 · data/Day5/Day5_설비센서_50건_가상.csv · 판정 기준: 원본 Day5 강의(평균 ± 2표준편차, 노이즈 vs 추세)</p>
-</main></body></html>"""
+</main>{hover_js}</body></html>"""
 Path("index.html").write_text(html, encoding="utf-8")
 print(json.dumps(values, ensure_ascii=False, indent=2))

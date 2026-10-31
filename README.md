@@ -48,6 +48,7 @@ npx skills add yunhakim17/learn-pdm-lite-yhk --agent claude-code --global --yes 
 |---|---|
 | 2026-10-31 | 첫 판 (블록 3개 · 10분) |
 | 2026-10-31 | 커리큘럼 한 장 페이지(docs/)와 따라 하기 매뉴얼(PPT·PDF 27장) 추가 |
+| 2026-10-31 | 진동 그래프에 마우스 호버(시각별 설비A·B 값) 추가 — 정답 대시보드와 Block 1 프롬프트 |
 
 ## 만든 방법
 
