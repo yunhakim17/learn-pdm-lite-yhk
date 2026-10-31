@@ -1,0 +1,5 @@
+learn-pdm-lite-yhk: 블록 3개 · 퀴즈 0문항
+오류 0건 · 경고 3건
+  [경고] .claude\skills\learn-pdm-lite-yhk\references\block0-setup.md: 수치 자리표시자 남음 ['{{expected:rows}}'] (4단계에서 채움)
+  [경고] .claude\skills\learn-pdm-lite-yhk\references\block1-noise-vs-trend.md: QUIZ 미작성
+  [경고] .claude\skills\learn-pdm-lite-yhk\references\block1-noise-vs-trend.md: 수치 자리표시자 남음 ['{{expected:a_vib_candidates}}', '{{expected:b_vib_candidates}}', '{{expected:b_temp_candidates}}'] (4단계에서 채움)
